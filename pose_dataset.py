@@ -45,6 +45,12 @@ class PoseDataset(data.Dataset):
             pose_embedder,
         )
 
+
+        class_list = [ sample.class_name for sample in self._pose_samples ]
+        classes = list(set(class_list))
+        self.labels = [ classes.index(name) for name in class_list ]
+        
+
     def _load_pose_samples(
         self,
         landmarks_path,
@@ -82,7 +88,7 @@ class PoseDataset(data.Dataset):
         # Get given pose embedding.
         pose_embedding = self._pose_embedder(pose_landmarks.landmarks)
         # pdb.set_trace()
-        return pose_embedding
+        return np.array(pose_embedding, dtype=np.float32), self.labels[idx]
 
     def __len__(self):
         return len(self._pose_samples)

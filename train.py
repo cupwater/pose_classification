@@ -10,6 +10,7 @@ import shutil
 import time
 import random
 import numpy as np
+import pdb
 
 
 import torch
@@ -17,10 +18,9 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
-
-from pose_dataset import PoseDataset
 import torch.utils.data as data
 
+from pose_dataset import PoseDataset
 from models.fc_model import fc_A
 
 from utils import Logger, AverageMeter, accuracy, mkdir_p, progress_bar
@@ -39,6 +39,7 @@ parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
 parser.add_argument('--schedule', type=int, nargs='+', default=[150, 225],
                         help='Decrease learning rate at these epochs.')
 parser.add_argument('--gamma', type=float, default=0.1, help='LR is multiplied by gamma on schedule.')
+parser.add_argument('--checkpoints', type=str, default='checkpoints', help='the save path')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
@@ -48,35 +49,32 @@ args = parser.parse_args()
 state = {k: v for k, v in args._get_kwargs()}
 
 # Use CUDA
-os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
 use_cuda = torch.cuda.is_available()
-
-# Random seed
-if args.manualSeed is None:
-    args.manualSeed = random.randint(1, 10000)
-random.seed(args.manualSeed)
-torch.manual_seed(args.manualSeed)
-if use_cuda:
-    torch.cuda.manual_seed_all(args.manualSeed)
 
 best_acc = 0
 
 def main():
     global best_acc
-    start_epoch = args.start_epoch  # start from epoch 0 or last checkpoint epoch
 
-    if not os.path.isdir(args.checkpoint):
-        mkdir_p(args.checkpoint)
-    # Data
-    print('==> Preparing dataset %s' % args.dataset)
-    
+    if not os.path.isdir(args.checkpoints):
+        mkdir_p(args.checkpoints)
+    from core.PoseEmbedding import FullBodyPoseEmbedder
+    pose_embedder = FullBodyPoseEmbedder()    
 
-    trainset = PoseDataset(root='./data')
+    trainset = PoseDataset(
+        landmarks_path='data/train.json',
+        pose_embedder=pose_embedder,
+        top_n_by_max_distance=30,
+        top_n_by_mean_distance=10)
     trainloader = data.DataLoader(trainset, batch_size=args.train_batch, shuffle=True, num_workers=1)
-    testset = PoseDataset(root='./data')
+    testset = PoseDataset(
+        landmarks_path='data/val.json',
+        pose_embedder=pose_embedder,
+        top_n_by_max_distance=30,
+        top_n_by_mean_distance=10)
     testloader = data.DataLoader(testset, batch_size=args.test_batch, shuffle=False, num_workers=1)
 
-    model = fc_A(139, 4)
+    model = fc_A(139, 5)
 
     model = torch.nn.DataParallel(model).cuda()
     cudnn.benchmark = True
@@ -84,11 +82,11 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    logger = Logger(os.path.join(args.save_path, 'log.txt'), title="training pose classification")
+    logger = Logger(os.path.join(args.checkpoints, 'log.txt'), title="training pose classification")
     logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc.', 'Valid Acc.'])
 
     # Train and val
-    for epoch in range(start_epoch, args.epochs):
+    for epoch in range(args.epochs):
         adjust_learning_rate(optimizer, epoch)
 
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
@@ -107,7 +105,7 @@ def main():
                 'acc': test_acc,
                 'best_acc': best_acc,
                 'optimizer' : optimizer.state_dict(),
-            }, is_best, save_path=args.save_path)
+            }, is_best, save_path=args.checkpoints)
 
     logger.close()
 
@@ -128,9 +126,10 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         # measure data loading time
         data_time.update(time.time() - end)
-
         if use_cuda:
-            inputs, targets = inputs.cuda(), targets.cuda(async=True)
+            #inputs, targets = inputs.cuda(), targets.cuda()
+            inputs = inputs.cuda()
+            targets = targets.cuda()
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
@@ -138,17 +137,16 @@ def train(trainloader, model, criterion, optimizer, epoch, use_cuda):
         loss = criterion(outputs, targets)
 
         # measure accuracy and record loss
-        prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data[0], inputs.size(0))
+        prec1 = accuracy(outputs.data, targets.data, topk=(1,))
+        losses.update(loss.item(), inputs.size(0))
         top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
+        #top5.update(prec5[0], inputs.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.2f | Top1: %.2f | Top5: %.2f'
-                    % (losses.avg, top1.avg, top5.avg))
+        progress_bar(batch_idx, len(trainloader), 'Loss: %.2f | Top1: %.2f' % (losses.avg, top1.avg))
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
@@ -177,21 +175,19 @@ def test(testloader, model, criterion, epoch, use_cuda):
         outputs = model(inputs)
         loss = criterion(outputs, targets)
         # measure accuracy and record loss
-        prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
+        prec1 = accuracy(outputs.data, targets.data, topk=(1,))
 
-        losses.update(loss.data[0], inputs.size(0))
+        losses.update(loss.item(), inputs.size(0))
         top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
 
-        progress_bar(batch_idx, len(testloader), 'Loss: %.2f | Top1: %.2f | Top5: %.2f'
-                    % (losses.avg, top1.avg, top5.avg))
+        progress_bar(batch_idx, len(testloader), 'Loss: %.2f | Top1: %.2f' % (losses.avg, top1.avg))
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
     return (losses.avg, top1.avg)
 
-def save_checkpoint(state, is_best, save_path='experiment/template', filename='checkpoint.pth.tar'):
+def save_checkpoint(state, is_best, save_path='checkpoints', filename='checkpoint.pth.tar'):
     filepath = os.path.join(save_path, filename)
     torch.save(state, filepath)
     if is_best:
