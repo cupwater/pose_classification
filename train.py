@@ -32,6 +32,8 @@ parser.add_argument('--epochs', default=300, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--train-batch', default=64, type=int, metavar='N',
                     help='train batchsize')
+parser.add_argument('--train-json', default='data/train.json', type=str,
+                    help='the landmarks of train data')
 parser.add_argument('--test-batch', default=32, type=int, metavar='N',
                     help='test batchsize')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
@@ -62,7 +64,8 @@ def main():
     pose_embedder = FullBodyPoseEmbedder()    
 
     trainset = PoseDataset(
-        landmarks_path='data/train.json',
+        #landmarks_path='data/train.json',
+        landmarks_path=args.train_json,
         pose_embedder=pose_embedder,
         top_n_by_max_distance=30,
         top_n_by_mean_distance=10)

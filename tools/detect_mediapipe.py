@@ -39,7 +39,7 @@ def detect(prefix, imglist, aug_time=20):
         static_image_mode=True, model_complexity=2, min_detection_confidence=0.5
     ) as pose:
         for line in open(imglist).readlines():
-            img_path = line.split(' ')[0]
+            img_path = line.split(' ')[0].strip()
             print(os.path.join(prefix, img_path))
             image = cv2.imread(os.path.join(prefix, img_path))
             # Flip the image horizontally for a later selfie-view display, and convert
