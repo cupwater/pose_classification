@@ -47,7 +47,10 @@ class PoseDataset(data.Dataset):
 
 
         class_list = [ sample.class_name for sample in self._pose_samples ]
+        #class_list = [ 'chin'if name == 'lean' else name for name in class_list ]
         classes = list(set(class_list))
+        self.class_num = len(classes)
+        print(classes)
         self.labels = [ classes.index(name) for name in class_list ]
         
 

@@ -21,7 +21,7 @@ import torch.optim as optim
 import torch.utils.data as data
 
 from pose_dataset import PoseDataset
-from models.fc_model import fc_A
+from models.fc_model import fc_A, fc_B, fc_S
 
 from utils import Logger, AverageMeter, accuracy, mkdir_p, progress_bar
 
@@ -77,7 +77,7 @@ def main():
         top_n_by_mean_distance=10)
     testloader = data.DataLoader(testset, batch_size=args.test_batch, shuffle=False, num_workers=1)
 
-    model = fc_A(139, 5)
+    model = fc_A(139, int(trainset.class_num))
 
     model = torch.nn.DataParallel(model).cuda()
     cudnn.benchmark = True

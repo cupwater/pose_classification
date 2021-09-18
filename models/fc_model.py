@@ -22,6 +22,19 @@ class fc_A(nn.Module):
         x = self.fc3(x)
         return x
 
+class fc_S(nn.Module):
+    def __init__(self, in_feature, class_num):
+        super(fc_S, self).__init__()
+        self.fc1 = nn.Linear(in_feature, 64)
+        self.relu1 = nn.ReLU()
+        self.fc2 = nn.Linear(64, class_num)
+        
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.relu1(x)
+        x = self.fc2(x)
+        return x
+
 
 '''
 Author: Baoyun
@@ -32,7 +45,7 @@ import torch.nn as nn
 
 class fc_B(nn.Module):
     def __init__(self, in_feature, class_num):
-        super(fc_A, self).__init__()
+        super(fc_B, self).__init__()
         self.fc1 = nn.Linear(in_feature, 512)
         self.relu1 = nn.ReLU()
         self.fc2 = nn.Linear(512, 256)
@@ -48,6 +61,6 @@ class fc_B(nn.Module):
         x = self.relu2(x)
         x = self.fc3(x)
         x = self.relu3(x)
-        x = self.fc3(x)
+        x = self.fc4(x)
         return x
 

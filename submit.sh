@@ -7,4 +7,4 @@
 #SBATCH --gres=gpu:4
 
 export PYTHONUNBUFFERED=1
-python train.py --train-json $1 --lr 0.1 --train-batch 64 --epochs 30 --schedule 15 25 --gamma 0.1 --wd 1e-4
+python train.py --train-json $1 --lr 0.01 --train-batch 128 --epochs 50 --schedule 25 40 --gamma 0.1 --wd 1e-3
