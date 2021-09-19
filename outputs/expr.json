@@ -1,0 +1,26 @@
+{
+    "data/test_images/expression/happy.jpg": [
+        {
+            "label": "高兴",
+            "score": 0.9999926090240479,
+            "face_bbox": [
+                135,
+                138,
+                489,
+                597
+            ]
+        }
+    ],
+    "data/test_images/expression/surprised.jpg": [
+        {
+            "label": "吃惊",
+            "score": 0.8357855081558228,
+            "face_bbox": [
+                103,
+                158,
+                455,
+                644
+            ]
+        }
+    ]
+}
