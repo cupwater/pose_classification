@@ -143,7 +143,7 @@ def get_affine_transform_matrix(src_pts, dst_pts):
 def warp_and_crop_face(src_img,
                        facial_pts,
                     reference_pts=REFERENCE_FACIAL_POINTS,
-                       crop_size=(96, 96),
+                       crop_size=(96, 112),
                        align_type='affine'):
     if reference_pts is None:
         if crop_size[0] == 96 and crop_size[1] == 112:

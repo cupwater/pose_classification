@@ -23,8 +23,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from mtcnn.mtcnn import MTCNN
-
 
 __author__ = "Iván de Paz Centeno"
-__version__= "0.1.0"
+
+class InvalidImage(Exception):
+    pass
