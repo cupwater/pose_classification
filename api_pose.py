@@ -11,16 +11,15 @@ import mediapipe as mp
 
 from models.fc_model import fc_A
 from core.PoseEmbedding import FullBodyPoseEmbedder
-from utils.align_face import warp_and_crop_face
-
 
 pose_dict = {
-    '0': '托腮',
-    '1': '低头',
-    '2': '侧倾',
-    '3': '高低肩',
+    '0': '侧倾',
+    '1': '托腮',
+    '2': '高低肩',
+    '3': '低头',
     '4': '正常'
 }
+
 
 
 def detect(pose, image):
@@ -50,6 +49,8 @@ def detect(pose, image):
 
 def detect_pose(img_list):
     pose_model = fc_A(139, 5)
+    pose_model.load_state_dict(
+            torch.load('weights/pose.npy', map_location='cpu'))
     pose_model.eval()
     pose_embedding = FullBodyPoseEmbedder()
     detect_results = {}
