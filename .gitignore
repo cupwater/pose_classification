@@ -1,5 +1,9 @@
 __pycache__/
+build/
 checkpoints/
+*.so
+*.pyx
+*.c
 *__pycache__*
 *.pyc
 data/
