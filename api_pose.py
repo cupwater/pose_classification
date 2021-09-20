@@ -6,10 +6,6 @@ Description: classify the pose and expression
 
 import cv2
 import numpy as np
-import json
-import os
-import argparse
-import pdb
 import torch
 import mediapipe as mp
 
@@ -52,19 +48,10 @@ def detect(pose, image):
     landmarks = np.round(landmarks, 5)
     return landmarks
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='classify pose and expression')
-    args = parser.parse_args()
-
-    img_prefix = 'data/test_images/'
-    img_list = ['lean.jpg', 'lopsided.jpg', 'chin.jpg', 'down.jpg', 'normal.jpg' ]
-    img_list = [os.path.join(img_prefix, 'pose', line) for line in img_list ]
-
-    # we concat the part landmarks and its embedding into a 139-d feature vector
+def detect_pose(img_list):
     pose_model = fc_A(139, 5)
     pose_model.eval()
     pose_embedding = FullBodyPoseEmbedder()
-
     detect_results = {}
 
     mp_pose = mp.solutions.pose
@@ -72,16 +59,14 @@ if __name__ == "__main__":
     for img_path in img_list:
         image = cv2.imread(img_path.strip())
         landmarks = detect(pose, image)
-        face_img = None
         if landmarks is not None:
             src_pts = np.int32(landmarks[[2,5,0,9,10]][:, :2])
             src_pts = [ (image.shape[1] - pts[0], pts[1]) for pts in src_pts ]
-            # crop the face region for expression recognition
-            face_img = warp_and_crop_face(image, src_pts, align_type='affine')
             # get the embedding of pose landmarks
             inputs = np.array(pose_embedding(landmarks), dtype=np.float32)
             inputs = torch.autograd.Variable(torch.from_numpy(inputs[np.newaxis,:,]).float())
             predict_pose = pose_model(inputs)
+            print(predict_pose)
             probs = torch.nn.functional.softmax(predict_pose)
             _pose = pose_dict[str(torch.argmax(predict_pose).item())]
             score = torch.max(probs).item()
@@ -91,11 +76,9 @@ if __name__ == "__main__":
             ly = int(np.min(landmarks[:, 1]) - (src_pts[4][0] - src_pts[0][0]))
             rx = int(np.max(landmarks[:, 0]))
             ry = int(np.max(landmarks[:, 1]))
-    
             detect_results[img_path] = {
                 "label": _pose,
                 "score": score,
                 "body_bbox": [lx, ly, rx, ry]
             }
-    
-    json.dump(detect_results, open('outputs/body.json', 'w'), ensure_ascii=False)
+    return detect_results

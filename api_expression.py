@@ -6,10 +6,6 @@ Description: classify the pose and expression
 
 import cv2
 import numpy as np
-import json
-import os
-import argparse
-import pdb
 import torch
 
 from models.WideResnet import wideresnet28_2
@@ -25,17 +21,8 @@ expression_dict = {
     '6': '吃惊'
 }
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='classify pose and expression')
-    args = parser.parse_args()
 
-    img_prefix = 'data/test_images/'
-    img_list = ['happy.jpg', 'surprised.jpg']
-    img_list = [
-        os.path.join(img_prefix, 'expression', line) for line in img_list
-    ]
-
+def detect_exprression(img_list):
     expr_model = wideresnet28_2(n_class=7)
     expr_model.load_state_dict(
         torch.load('weights/expression.npy', map_location='cpu')['model'])
@@ -68,5 +55,4 @@ if __name__ == "__main__":
                 "score": score,
                 "face_bbox": [lx, ly, lx + h, ly + w]
             })
-    
-    json.dump(detect_results, open('outputs/expr.json', 'w'), ensure_ascii=False)
+    return detect_results
