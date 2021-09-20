@@ -7,7 +7,7 @@ Description: align the face
 
 import cv2
 import numpy as np
-from skimage import transform as trans
+#from skimage import transform as trans
 
 # reference facial points, a list of coordinates (x,y)
 REFERENCE_FACIAL_POINTS = [
@@ -187,11 +187,11 @@ def warp_and_crop_face(src_img,
     elif align_type is 'affine':
         tfm = get_affine_transform_matrix(src_pts, ref_pts)
     #        print('get_affine_transform_matrix() returns tfm=\n' + str(tfm))
-    elif align_type is 'similarity':
-        # tfm = get_similarity_transform_for_cv2(src_pts, ref_pts)
-        tform = trans.SimilarityTransform()
-        tform.estimate(src_pts, ref_pts)
-        tfm = tform.params[0:2, :]
+    #elif align_type is 'similarity':
+    #    # tfm = get_similarity_transform_for_cv2(src_pts, ref_pts)
+    #    tform = trans.SimilarityTransform()
+    #    tform.estimate(src_pts, ref_pts)
+    #    tfm = tform.params[0:2, :]
 
     face_img = cv2.warpAffine(src_img, tfm, (crop_size[0], crop_size[1]))
 
