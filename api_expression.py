@@ -11,6 +11,8 @@ import torch
 from models.WideResnet import wideresnet28_2
 from mtcnn import MTCNN
 
+__all__ = ['detect_expression']
+
 expression_dict = {
     '0': '生气',
     '1': '恶心',
@@ -22,7 +24,7 @@ expression_dict = {
 }
 
 
-def detect_exprression(img_list):
+def detect_expression(img_list):
     expr_model = wideresnet28_2(n_class=7)
     expr_model.load_state_dict(
         torch.load('weights/expression.npy', map_location='cpu')['model'])
@@ -46,7 +48,7 @@ def detect_exprression(img_list):
             inputs = torch.autograd.Variable(
                 torch.from_numpy(face_img[np.newaxis, :, :, :]).float())
             predict_expr = expr_model(inputs)
-            probs = torch.nn.functional.softmax(predict_expr)
+            probs = torch.nn.functional.softmax(predict_expr, dim=0)
             expr = expression_dict[str(torch.argmax(probs).item())]
             score = torch.max(probs).item()
 

@@ -20,6 +20,7 @@ pose_dict = {
     '4': '正常'
 }
 
+__all__ = ['detect_pose']
 
 
 def detect(pose, image):
@@ -67,7 +68,7 @@ def detect_pose(img_list):
             inputs = np.array(pose_embedding(landmarks), dtype=np.float32)
             inputs = torch.autograd.Variable(torch.from_numpy(inputs[np.newaxis,:,]).float())
             predict_pose = pose_model(inputs)
-            probs = torch.nn.functional.softmax(predict_pose)
+            probs = torch.nn.functional.softmax(predict_pose, dim=0)
             _pose = pose_dict[str(torch.argmax(predict_pose).item())]
             score = torch.max(probs).item()
 
