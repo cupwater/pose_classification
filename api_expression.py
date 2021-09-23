@@ -41,18 +41,17 @@ def detect_expression(img_list):
         for _idx, _det in enumerate(mtcnn_result):
             lx, ly, h, w = _det['box']
             face_img = image[ly:(ly + w), lx:(lx + h), :]
-
             face_img = np.transpose(cv2.resize(face_img, (112, 112)),
                                     (2, 0, 1))
             face_img = (face_img / 255.0 - 0.508) / 0.255
             inputs = torch.autograd.Variable(
                 torch.from_numpy(face_img[np.newaxis, :, :, :]).float())
             predict_expr = expr_model(inputs)
-            probs = torch.nn.functional.softmax(predict_expr, dim=0)
+            probs = torch.nn.functional.softmax(predict_expr, dim=1)
             expr = expression_dict[str(torch.argmax(probs).item())]
             score = torch.max(probs).item()
 
-            detect_results[img_path].append({
+            detect_results[img_path.strip()].append({
                 "label": expr,
                 "score": score,
                 "face_bbox": [lx, ly, lx + h, ly + w]

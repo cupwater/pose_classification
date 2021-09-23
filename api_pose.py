@@ -68,7 +68,7 @@ def detect_pose(img_list):
             inputs = np.array(pose_embedding(landmarks), dtype=np.float32)
             inputs = torch.autograd.Variable(torch.from_numpy(inputs[np.newaxis,:,]).float())
             predict_pose = pose_model(inputs)
-            probs = torch.nn.functional.softmax(predict_pose, dim=0)
+            probs = torch.nn.functional.softmax(predict_pose, dim=1)
             _pose = pose_dict[str(torch.argmax(predict_pose).item())]
             score = torch.max(probs).item()
 
@@ -77,7 +77,7 @@ def detect_pose(img_list):
             ly = int(np.min(landmarks[:, 1]) - (src_pts[4][0] - src_pts[0][0]))
             rx = int(np.max(landmarks[:, 0]))
             ry = int(np.max(landmarks[:, 1]))
-            detect_results[img_path] = {
+            detect_results[img_path.strip()] = {
                 "label": _pose,
                 "score": score,
                 "body_bbox": [lx, ly, rx, ry]

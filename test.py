@@ -5,6 +5,7 @@ Description: demo for classifying pose and expression fir a given image list
 '''
 import json
 import argparse
+import os
 
 if __name__ == "__main__":
 
@@ -23,11 +24,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     imglist = open(args.image_list).readlines()
 
+    if not os.path.exists('./outputs'):
+        os.makedirs('./outputs')
+
     if args.detect_type == 0:
-        from api_pose import detect_pose
+        from detect_pose import detect_pose
         detect_result = detect_pose(imglist)
         json.dump(detect_result, open('outputs/pose.json', 'w'), ensure_ascii=False)
     elif args.detect_type == 1:
-        from api_expression import detect_expression
+        from detect_expression import detect_expression
         detect_result = detect_expression(imglist)
         json.dump(detect_result, open('outputs/expression.json', 'w'), ensure_ascii=False)
